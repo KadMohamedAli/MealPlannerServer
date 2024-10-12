@@ -40,4 +40,13 @@ Object.keys(db).forEach(modelName => {
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
+// Load models
+db.User = require('./User')(sequelize, Sequelize.DataTypes);
+db.Group = require('./Group')(sequelize, Sequelize.DataTypes);
+db.UserGroup = require('./UserGroup')(sequelize, Sequelize.DataTypes);
+
+// Set up associations
+db.User.associate(db);
+db.Group.associate(db);
+
 module.exports = db;

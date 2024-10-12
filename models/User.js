@@ -16,13 +16,15 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     // Define associations
-    User.associate = models => {
+    User.associate = (models) => {
         // User belongs to many groups, with additional isAdmin field
-        User.belongsToMany(models.Group, { through: models.UserGroup });
+        User.belongsToMany(models.Group, { through: models.UserGroup,
+            foreignKey: 'userId',
+         });
         
         // User belongs to many meals, with an additional score field
         User.belongsToMany(models.Meal, { through: models.UserMeal });
     };
-
+    
     return User;
 };
