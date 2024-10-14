@@ -8,6 +8,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
+      date: {
+        type: DataTypes.DATEONLY, // This field will store the date for the meal
+        allowNull: false,
+      },
     });
   
     Meal.associate = (models) => {
