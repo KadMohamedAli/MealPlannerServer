@@ -1,5 +1,5 @@
 const { Meal, Recipe, Ingredient, UserMeal } = require('../models');
-const { Op } = require('sequelize');
+const { Sequelize,Op } = require('sequelize');
 const moment = require('moment');
 
 
@@ -231,35 +231,58 @@ exports.getMeanScoreForMeal = async (req, res) => {
   try {
     const result = await UserMeal.findAll({
       where: { MealId: mealId },
-      attributes: [[sequelize.fn('AVG', sequelize.col('score')), 'meanScore']],
+      attributes: [[Sequelize.fn('AVG', Sequelize.col('score')), 'meanScore']],
     });
 
     res.json(result[0]);
   } catch (err) {
+    console.log(err);
     res.status(500).json({ error: 'Error calculating mean score for the meal' });
   }
 };
 
-exports.getRandomMeal = async (req, res) => {
+exports.getaRandomMeal = async (req, res) => {
+  const maxRetries = 5; // Limit the number of retries
+  let attempts = 0;
   try {
-    const count = await Recipe.count();
-    const randomIndex = Math.floor(Math.random() * count);
-    const randomRecipe = await Recipe.findOne({
-      offset: randomIndex,
-      include: [
-        {
-          model: Ingredient,
-          as: 'ingredients',
-          through: { attributes: [] },
-        },
-      ],
-    });
+    const count = await Meal.count(); // Count the total number of meals
+    if (count === 0) {
+      return res.status(404).json({ error: 'No meals found' });
+    }
 
-    res.json(randomRecipe);
+    while (attempts < maxRetries) {
+      attempts++;
+      const randomIndex = Math.floor(Math.random() * count);
+      const randomMeal = await Meal.findOne({
+        offset: randomIndex,
+        include: [
+          {
+            model: Recipe,
+            as: 'recipe',
+            include: [
+              {
+                model: Ingredient,
+                as: 'ingredients',
+                through: { attributes: [] },
+              },
+            ],
+          },
+        ],
+      });
+
+      if (randomMeal) {
+        return res.json(randomMeal); // If a meal is found, return it
+      }
+    }
+
+    // If no meal is found after the maximum number of retries
+    res.status(404).json({ error: 'Unable to find a random meal after several attempts' });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ error: 'Error fetching a random meal' });
   }
 };
+
 
 exports.getIntelligentMealSuggestion = async (req, res) => {
   const groupId = req.params.groupId;
@@ -268,9 +291,9 @@ exports.getIntelligentMealSuggestion = async (req, res) => {
     // Example algorithm: Fetch the most rated meals in the past for the group
     const meal = await UserMeal.findOne({
       where: { GroupId: groupId },
-      attributes: ['MealId', [sequelize.fn('AVG', sequelize.col('score')), 'avgScore']],
+      attributes: ['MealId', [Sequelize.fn('AVG', Sequelize.col('score')), 'avgScore']],
       group: ['MealId'],
-      order: [[sequelize.literal('avgScore'), 'DESC']],
+      order: [[Sequelize.literal('avgScore'), 'DESC']],
       limit: 1,
       include: [
         {
@@ -299,6 +322,7 @@ exports.getIntelligentMealSuggestion = async (req, res) => {
 
     res.json(meal);
   } catch (err) {
+    console.log(err);
     res.status(500).json({ error: 'Error suggesting an intelligent meal' });
   }
 };

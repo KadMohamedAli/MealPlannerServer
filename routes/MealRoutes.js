@@ -7,7 +7,7 @@ const {
   getMealsForWeek,
   getMealsForNextSevenDays,
   getMeanScoreForMeal,
-  getRandomMeal,
+  getaRandomMeal,
   getIntelligentMealSuggestion
 } = require('../controllers/mealController');
 const authMiddleware = require('../middlewares/Auth');
@@ -28,8 +28,8 @@ router.get('/group/:groupId', authMiddleware, groupAuthMiddleware, getMealsForGr
 
 router.get('/group/:groupId/week', authMiddleware, groupAuthMiddleware, getMealsForWeek);
 router.get('/group/:groupId/next-seven-days', authMiddleware,groupAuthMiddleware, getMealsForNextSevenDays);
-router.get('/:mealId/mean-score', authMiddleware, groupAuthMiddleware, getMeanScoreForMeal);
-router.get('/random', authMiddleware, groupAuthMiddleware, getRandomMeal);
+router.get('/group/:groupId/:mealId/mean-score', authMiddleware, groupAuthMiddleware, getMeanScoreForMeal);
+router.get('/meal/random', authMiddleware, getaRandomMeal);
 router.get('/group/:groupId/intelligent-suggestion', authMiddleware, groupAuthMiddleware, getIntelligentMealSuggestion);
 
 module.exports = router;
