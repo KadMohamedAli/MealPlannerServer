@@ -289,27 +289,23 @@ exports.getIntelligentMealSuggestion = async (req, res) => {
 
   try {
     // Example algorithm: Fetch the most rated meals in the past for the group
-    const meal = await UserMeal.findOne({
-      where: { GroupId: groupId },
-      attributes: ['MealId', [Sequelize.fn('AVG', Sequelize.col('score')), 'avgScore']],
-      group: ['MealId'],
-      order: [[Sequelize.literal('avgScore'), 'DESC']],
-      limit: 1,
+    const meal = await Meal.findOne({
+      through :{
+        where : { GroupId: groupId},
+        attributes: ['MealId', [Sequelize.fn('AVG', Sequelize.col('score')), 'avgScore']],
+        group: ['MealId'],
+        order: [[Sequelize.literal('avgScore'), 'DESC']],
+        limit: 1,
+      },
       include: [
         {
-          model: Meal,
-          as: 'meal',
+          model: Recipe,
+          as: 'recipe',
           include: [
             {
-              model: Recipe,
-              as: 'recipe',
-              include: [
-                {
-                  model: Ingredient,
-                  as: 'ingredients',
-                  through: { attributes: [] },
-                },
-              ],
+              model: Ingredient,
+              as: 'ingredients',
+              through: { attributes: [] },
             },
           ],
         },
