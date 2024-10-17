@@ -11,11 +11,11 @@ const {
   getIntelligentMealSuggestion
 } = require('../controllers/mealController');
 const authMiddleware = require('../middlewares/Auth');
-const { groupAuthMiddleware } = require('../middlewares/GroupAuth');
+const { groupAuthMiddleware,checkIsAdmin } = require('../middlewares/GroupAuth');
 const router = express.Router();
 
 // Create meal with recipe and ingredients
-router.post('/create-with-recipe', authMiddleware, groupAuthMiddleware, createMealWithRecipe);
+router.post('/create-with-recipe', authMiddleware, groupAuthMiddleware, checkIsAdmin, createMealWithRecipe);
 
 // Get meal details
 router.get('/:mealId', authMiddleware, getMealDetails);

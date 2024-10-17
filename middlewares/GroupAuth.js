@@ -1,7 +1,14 @@
-const { UserGroup } = require('../models');
+const { UserGroup,Meal } = require('../models');
 
 exports.groupAuthMiddleware = async (req, res, next) => {
-  const groupId = req.params.groupId || req.body.groupId;
+  let groupId = req.params.groupId || req.body.groupId;
+  if (req.params.mealId){
+    const meal = await Meal.findOne({
+      where : { id: req.params.mealId},
+    });
+    groupId=meal.GroupId;
+    console.log('group id is : ',groupId,', mealId is : ',req.params.mealId);
+  }
   try {
     const userGroup = await UserGroup.findOne({
       where: { UserId: req.user.id, GroupId: groupId },
@@ -18,5 +25,11 @@ exports.groupAuthMiddleware = async (req, res, next) => {
 
 exports.checkIsAdmin = (req, res, next) => {
   if (!req.userGroup.isAdmin) return res.status(403).json({ error: 'Admin privileges required' });
+  next();
+};
+
+exports.checkIsUser = (req, res, next) => {
+  if(!req.user.id=== req.params.id) 
+    return res.status(403).json({error :"Can't edit other users"});
   next();
 };
