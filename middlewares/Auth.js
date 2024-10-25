@@ -1,5 +1,9 @@
 const jwt = require('jsonwebtoken');
-const { User } = require('../models');
+const { User,RefreshToken } = require('../models');
+const {createDeviceIDToken}= require('../controllers/Utils');
+require('dotenv').config();
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 module.exports = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -8,31 +12,30 @@ module.exports = async (req, res, next) => {
   }
 
   const token = authHeader.split(' ')[1];
+  req.userAgent=req.headers['user-agent'];// Get the User-Agent from the request headers
 
   try {
-    // Verify the JWT token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Verify the token and decode the user information
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded; // Attach the decoded user info to the request object
+    
+    // Check if the device matches
+    const deviceIDToken = createDeviceIDToken(req.userAgent);
+    // Find all stored refresh tokens for this user
+    const storedTokens = await RefreshToken.findAll({ where: { user_id: decoded.id } });
 
-    // Find the user from the database using the id from the decoded token
-    const user = await User.findByPk(decoded.id, {
-      attributes: ['id', 'username', 'name'],  // Only retrieve necessary fields
-    });
+    // Check if any of the stored tokens match the device ID
+    const isDeviceMatched = storedTokens.some(storedToken => storedToken.device_id === deviceIDToken);
 
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+    if (!isDeviceMatched) {
+      // Device mismatch detected, invalidate all refresh tokens for this user
+      await RefreshToken.destroy({ where: { user_id: decoded.id } });
+      return res.status(403).json({ error: 'Possible token misuse detected, all sessions terminated' });
     }
 
-    // Attach the user details to the req object
-    req.user = {
-      id: user.id,
-      username: user.username,
-      name: user.name,
-    };
-
-    // Proceed to the next middleware or route handler
-    next();
+    next(); // Continue to the next middleware or route handler
   } catch (err) {
-    console.error('Error verifying token:', err);
-    return res.status(401).json({ error: 'Invalid or expired token' });
+    console.error(err);
+    res.status(403).json({ error: 'Invalid token' });
   }
 };

@@ -51,17 +51,19 @@ exports.updateIngredient = async (req, res) => {
   }
 };
 
-// Update a user
+// Update user information
 exports.updateUser = async (req, res) => {
-  const { id } = req.params;
-  const {name } = req.body;
+  const { email, username } = req.body;
 
   try {
-    const user = await User.findByPk(id);
+    const user = await User.findByPk(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    await user.update({ name });
-    res.json(user);
+    user.email = email || user.email;
+    user.username = username || user.username;
+
+    await user.save();
+    res.status(200).json({ message: 'User updated successfully', user });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error updating user' });
