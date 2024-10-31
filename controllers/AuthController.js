@@ -94,7 +94,7 @@ exports.login = async (req, res) => {
 
 
     res.setHeader('Authorization', `Bearer ${accessToken}`);
-    res.json({ message: "Logged in successfully." });
+    res.status(200).json({ message: "Logged in successfully." });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error logging in' });
@@ -152,7 +152,7 @@ exports.refreshToken = async (req, res) => {
     setRefreshTokenCookie(res, newRefreshToken);
 
     res.setHeader('Authorization', `Bearer ${accessToken}`);
-    res.json({ message: 'Token refreshed successfully' });
+    res.status(200).json({ message: 'Token refreshed successfully' });
   } catch (err) {
     console.error('Error refreshing token:', err);
     res.status(500).json({ error: 'Server error' });
@@ -199,9 +199,10 @@ exports.changePassword = async (req, res) => {
     clearAuthCookies(res);
 
     const {accessToken, newRefreshToken} = createTokens(user);
+    const device_id= createDeviceIDToken(req.userAgent);
 
     // Create a new refresh token in the database
-    await createRefreshToken(user, clientIpAddress);
+    await createRefreshToken(user, clientIpAddress, device_id);
 
     // Set new authentication cookies
     setRefreshTokenCookie(res, newRefreshToken);
